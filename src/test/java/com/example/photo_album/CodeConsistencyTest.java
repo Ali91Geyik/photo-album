@@ -15,14 +15,12 @@ import com.example.photo_album.service.PhotoService;
 import com.example.photo_album.service.UserService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
-import org.springframework.test.context.ActiveProfiles;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -31,9 +29,7 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
-@ActiveProfiles("test")
-public class CodeConsistencyTest {
+public class CodeConsistencyTest extends BaseTest {
 
     @Autowired
     private ApplicationContext applicationContext;

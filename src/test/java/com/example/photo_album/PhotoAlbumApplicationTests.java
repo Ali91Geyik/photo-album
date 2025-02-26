@@ -1,20 +1,19 @@
 // src/test/java/com/example/photo_album/PhotoAlbumApplicationTests.java
 package com.example.photo_album;
 
+import com.example.photo_album.config.CITestConfig;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.TestPropertySource;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest
-@TestPropertySource(properties = {
-		"aws.region=eu-north-1",
-		"aws.s3.bucket=test-bucket",
-		"spring.jpa.hibernate.ddl-auto=none",
-		"spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration"
-})
+@Import(CITestConfig.class)
+@ActiveProfiles({"test", "ci-test"})
 class PhotoAlbumApplicationTests {
 
 	@Test
 	void contextLoads() {
+		// This test verifies that the Spring context loads successfully
 	}
 }

@@ -8,10 +8,8 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.test.context.transaction.TestTransaction;
 
@@ -24,8 +22,10 @@ import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
-@ActiveProfiles("postgres-test")
+/**
+ * Tests PostgreSQL-specific concurrency behaviors.
+ * This class extends AbstractPostgresqlTest which handles all CI-specific configuration.
+ */
 public class PostgresConcurrencyTest extends AbstractPostgresqlTest {
 
     @PersistenceContext
@@ -282,5 +282,4 @@ public class PostgresConcurrencyTest extends AbstractPostgresqlTest {
             assertThat(errorMessage).contains("duplicate key");
         }
     }
-
 }

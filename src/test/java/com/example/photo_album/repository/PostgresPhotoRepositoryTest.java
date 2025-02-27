@@ -10,6 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -17,10 +19,15 @@ import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+
 /**
  * PostgreSQL-specific tests for PhotoRepository.
  * Tests features that might behave differently between H2 and PostgreSQL.
  */
+@TestPropertySource(properties = {
+        "spring.main.allow-bean-definition-overriding=true"
+})
+@ActiveProfiles("ci-test")
 class PostgresPhotoRepositoryTest extends AbstractPostgresqlTest {
 
     @Autowired

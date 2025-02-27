@@ -9,6 +9,8 @@ import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.transaction.TestTransaction;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,7 +22,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * PostgreSQL-specific tests for AlbumRepository.
  * Tests features that might behave differently between H2 and PostgreSQL.
+ * This class extends AbstractPostgresqlTest which handles all CI-specific configuration.
  */
+@TestPropertySource(properties = {
+        "spring.main.allow-bean-definition-overriding=true"
+})
+@ActiveProfiles("ci-test")
 class PostgresAlbumRepositoryTest extends AbstractPostgresqlTest {
 
     @Autowired
@@ -36,6 +43,7 @@ class PostgresAlbumRepositoryTest extends AbstractPostgresqlTest {
     private List<Photo> testPhotos;
     private Album album1;
     private Album album2;
+
     @Autowired
     private EntityManager entityManager;
 
@@ -131,7 +139,7 @@ class PostgresAlbumRepositoryTest extends AbstractPostgresqlTest {
     @Transactional
     void testFindByUser() {
         List<Album> userAlbums = albumRepository.findByUser(testUser);
-        
+
         assertThat(userAlbums).hasSize(2);
         assertThat(userAlbums).extracting(Album::getId)
                 .containsExactlyInAnyOrder(album1.getId(), album2.getId());
@@ -160,27 +168,27 @@ class PostgresAlbumRepositoryTest extends AbstractPostgresqlTest {
     @Transactional
     void testAlbumPhotoRelationship() {
         // Test many-to-many relationship between albums and photos
-        
+
         // Get album with photos
         Album fetchedAlbum1 = albumRepository.findById(album1.getId()).orElseThrow();
         Album fetchedAlbum2 = albumRepository.findById(album2.getId()).orElseThrow();
-        
+
         // Check photo counts
         assertThat(fetchedAlbum1.getPhotos()).hasSize(3);
         assertThat(fetchedAlbum2.getPhotos()).hasSize(3);
-        
+
         // Check for shared photo (the overlapping one)
         Photo overlappingPhoto = testPhotos.get(2); // The photo that appears in both albums
-        
+
         assertThat(fetchedAlbum1.getPhotos()).extracting(Photo::getId)
                 .contains(overlappingPhoto.getId());
         assertThat(fetchedAlbum2.getPhotos()).extracting(Photo::getId)
                 .contains(overlappingPhoto.getId());
-        
+
         // Test adding a new photo to an album
         fetchedAlbum1.getPhotos().add(testPhotos.get(4)); // Add the last photo to album1
         albumRepository.save(fetchedAlbum1);
-        
+
         // Verify the photo was added
         Album updatedAlbum1 = albumRepository.findById(album1.getId()).orElseThrow();
         assertThat(updatedAlbum1.getPhotos()).hasSize(4);
@@ -235,7 +243,7 @@ class PostgresAlbumRepositoryTest extends AbstractPostgresqlTest {
     void testPerformanceWithLargeNumberOfAlbums() {
         // Create a large number of albums to test PostgreSQL performance
         List<Album> bulkAlbums = new ArrayList<>();
-        
+
         for (int i = 0; i < 30; i++) {
             Album album = Album.builder()
                     .id(UUID.randomUUID().toString())
@@ -246,20 +254,20 @@ class PostgresAlbumRepositoryTest extends AbstractPostgresqlTest {
                     // Add a random subset of photos to each album
                     .photos(new ArrayList<>(testPhotos.subList(i % 3, Math.min(i % 3 + 2, testPhotos.size()))))
                     .build();
-            
+
             bulkAlbums.add(album);
         }
-        
+
         albumRepository.saveAll(bulkAlbums);
-        
+
         // Test that we can still efficiently find albums by user
         List<Album> allUserAlbums = albumRepository.findByUser(testUser);
         assertThat(allUserAlbums).hasSizeGreaterThanOrEqualTo(32); // 30 new + 2 original
-        
+
         // Test that we can find albums by partial name
         List<Album> albumsWithNumber1 = albumRepository.findByUserAndNameContainingIgnoreCase(testUser, "1");
         assertThat(albumsWithNumber1).isNotEmpty();
-        
+
         // Verify that we can load all albums with their photos efficiently
         for (Album album : allUserAlbums.subList(0, 10)) { // Test first 10 only
             Album loadedAlbum = albumRepository.findById(album.getId()).orElseThrow();

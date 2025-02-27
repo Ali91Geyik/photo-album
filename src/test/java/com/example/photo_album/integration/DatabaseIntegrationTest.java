@@ -1,6 +1,7 @@
 // src/test/java/com/example/photo_album/integration/DatabaseIntegrationTest.java
 package com.example.photo_album.integration;
 
+import com.example.photo_album.config.CITestConfig;
 import com.example.photo_album.model.Album;
 import com.example.photo_album.model.Photo;
 import com.example.photo_album.model.User;
@@ -12,10 +13,12 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -23,8 +26,12 @@ import java.util.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
-@ActiveProfiles("test")
+@ActiveProfiles("ci-test")
+@Import(CITestConfig.class)
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@TestPropertySource(properties = {
+        "spring.main.allow-bean-definition-overriding=true"
+})
 public class DatabaseIntegrationTest {
 
     @Autowired
@@ -48,16 +55,15 @@ public class DatabaseIntegrationTest {
         photoRepository.deleteAll();
         userRepository.deleteAll();
 
-        // Create test user
+        // Create test user - DON'T set the ID manually, let Hibernate generate it
         testUser = User.builder()
-                .id(UUID.randomUUID().toString())
-                .username("testuser")
-                .email("test@example.com")
+                .username("testuser_" + UUID.randomUUID()) // Add randomness to avoid conflicts
+                .email("test_" + UUID.randomUUID() + "@example.com")
                 .password("password")
                 .createdAt(LocalDateTime.now())
                 .build();
-        
-        userRepository.save(testUser);
+
+        testUser = userRepository.save(testUser);
 
         // Create test photos with tags and labels
         Map<String, Float> labels1 = new HashMap<>();
@@ -112,7 +118,7 @@ public class DatabaseIntegrationTest {
     void testUserPhotoRelationship() {
         // Test finding photos by user
         Page<Photo> userPhotos = photoRepository.findByUser(testUser, PageRequest.of(0, 10));
-        
+
         assertThat(userPhotos.getContent()).hasSize(2);
         assertThat(userPhotos.getContent()).extracting(Photo::getId)
                 .containsExactlyInAnyOrder(testPhoto1.getId(), testPhoto2.getId());
@@ -140,7 +146,7 @@ public class DatabaseIntegrationTest {
     void testFindPhotosByUserAndTag() {
         // Test finding photos by user and tag
         List<Photo> userVacationPhotos = photoRepository.findByUserAndTagsContaining(testUser, "vacation");
-        
+
         assertThat(userVacationPhotos).hasSize(2);
         assertThat(userVacationPhotos).extracting(Photo::getId)
                 .containsExactlyInAnyOrder(testPhoto1.getId(), testPhoto2.getId());
@@ -164,7 +170,7 @@ public class DatabaseIntegrationTest {
     void testAlbumPhotoRelationship() {
         // Test finding albums by user
         List<Album> userAlbums = albumRepository.findByUser(testUser);
-        
+
         assertThat(userAlbums).hasSize(1);
         assertThat(userAlbums.get(0).getId()).isEqualTo(testAlbum.getId());
         assertThat(userAlbums.get(0).getPhotos()).hasSize(1);
@@ -176,7 +182,7 @@ public class DatabaseIntegrationTest {
         // Test user repository methods
         assertThat(userRepository.existsByUsername("testuser")).isTrue();
         assertThat(userRepository.existsByEmail("test@example.com")).isTrue();
-        
+
         Optional<User> foundUser = userRepository.findByUsername("testuser");
         assertThat(foundUser).isPresent();
         assertThat(foundUser.get().getId()).isEqualTo(testUser.getId());

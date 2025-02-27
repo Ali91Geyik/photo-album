@@ -1,6 +1,7 @@
 // src/test/java/com/example/photo_album/integration/SecurityIntegrationTest.java
 package com.example.photo_album.integration;
 
+import com.example.photo_album.BaseTest;
 import com.example.photo_album.model.User;
 import com.example.photo_album.repository.UserRepository;
 import com.example.photo_album.service.UserService;
@@ -8,13 +9,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.is;
@@ -23,10 +22,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
 @AutoConfigureMockMvc
-@ActiveProfiles("test")
-public class SecurityIntegrationTest {
+@TestPropertySource(properties = {
+        "spring.main.allow-bean-definition-overriding=true"
+})
+public class SecurityIntegrationTest extends BaseTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -49,7 +49,7 @@ public class SecurityIntegrationTest {
         // Clean up existing test users
         userRepository.findByUsername(TEST_USERNAME)
                 .ifPresent(user -> userRepository.delete(user));
-        
+
         userRepository.findByEmail(TEST_EMAIL)
                 .ifPresent(user -> userRepository.delete(user));
     }
@@ -58,11 +58,12 @@ public class SecurityIntegrationTest {
     void testUserRegistration() throws Exception {
         // Test user registration
         mockMvc.perform(post("/api/auth/register")
-                .param("username", TEST_USERNAME)
-                .param("email", TEST_EMAIL)
-                .param("password", TEST_PASSWORD)
-                .contentType(MediaType.APPLICATION_FORM_URLENCODED))
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                        .param("username", TEST_USERNAME)
+                        .param("email", TEST_EMAIL)
+                        .param("password", TEST_PASSWORD))
                 .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.id", notNullValue()))
                 .andExpect(jsonPath("$.username", is(TEST_USERNAME)))
                 .andExpect(jsonPath("$.email", is(TEST_EMAIL)));
@@ -72,13 +73,14 @@ public class SecurityIntegrationTest {
     void testUserLogin() throws Exception {
         // First register a user
         User user = userService.registerUser(TEST_USERNAME, TEST_EMAIL, TEST_PASSWORD);
-        
+
         // Then test login
         mockMvc.perform(post("/api/auth/login")
-                .param("username", TEST_USERNAME)
-                .param("password", TEST_PASSWORD)
-                .contentType(MediaType.APPLICATION_FORM_URLENCODED))
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                        .param("username", TEST_USERNAME)
+                        .param("password", TEST_PASSWORD))
                 .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.userId", is(user.getId())))
                 .andExpect(jsonPath("$.username", is(TEST_USERNAME)))
                 .andExpect(jsonPath("$.email", is(TEST_EMAIL)));
@@ -89,23 +91,26 @@ public class SecurityIntegrationTest {
         // Test access to protected endpoints without authentication
         mockMvc.perform(get("/api/photos"))
                 .andExpect(status().isUnauthorized());
-                
+
         mockMvc.perform(get("/api/albums"))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
     void testAuthenticationWithBasicAuth() throws Exception {
-        // Register a user first
+        // Register a user first and add null check
         User user = userService.registerUser(TEST_USERNAME, TEST_EMAIL, TEST_PASSWORD);
-        
-        // Test access with basic auth
-        // Note: We're using the ID as username for Spring Security, as specified in CustomUserDetailsService
-        mockMvc.perform(get("/api/photos")
-                .header("Authorization", createBasicAuthHeader(user.getId(), TEST_PASSWORD)))
-                .andExpect(status().isOk());
+
+        if (user != null && user.getId() != null) {
+            // Test access with basic auth
+            mockMvc.perform(get("/api/photos")
+                            .header("Authorization", createBasicAuthHeader(user.getId(), TEST_PASSWORD)))
+                    .andExpect(status().isOk());
+        } else {
+            throw new IllegalStateException("Failed to create test user for authentication test");
+        }
     }
-    
+
     // Helper method to create a basic auth header
     private String createBasicAuthHeader(String username, String password) {
         String auth = username + ":" + password;

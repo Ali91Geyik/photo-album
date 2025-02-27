@@ -55,16 +55,15 @@ public class DatabaseIntegrationTest {
         photoRepository.deleteAll();
         userRepository.deleteAll();
 
-        // Create test user
+        // Create test user - DON'T set the ID manually, let Hibernate generate it
         testUser = User.builder()
-                .id(UUID.randomUUID().toString())
-                .username("testuser")
-                .email("test@example.com")
+                .username("testuser_" + UUID.randomUUID()) // Add randomness to avoid conflicts
+                .email("test_" + UUID.randomUUID() + "@example.com")
                 .password("password")
                 .createdAt(LocalDateTime.now())
                 .build();
 
-        userRepository.save(testUser);
+        testUser = userRepository.save(testUser);
 
         // Create test photos with tags and labels
         Map<String, Float> labels1 = new HashMap<>();

@@ -58,11 +58,12 @@ public class SecurityIntegrationTest extends BaseTest {
     void testUserRegistration() throws Exception {
         // Test user registration
         mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                         .param("username", TEST_USERNAME)
                         .param("email", TEST_EMAIL)
-                        .param("password", TEST_PASSWORD)
-                        .contentType(MediaType.APPLICATION_FORM_URLENCODED))
+                        .param("password", TEST_PASSWORD))
                 .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.id", notNullValue()))
                 .andExpect(jsonPath("$.username", is(TEST_USERNAME)))
                 .andExpect(jsonPath("$.email", is(TEST_EMAIL)));
@@ -75,10 +76,11 @@ public class SecurityIntegrationTest extends BaseTest {
 
         // Then test login
         mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                         .param("username", TEST_USERNAME)
-                        .param("password", TEST_PASSWORD)
-                        .contentType(MediaType.APPLICATION_FORM_URLENCODED))
+                        .param("password", TEST_PASSWORD))
                 .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.userId", is(user.getId())))
                 .andExpect(jsonPath("$.username", is(TEST_USERNAME)))
                 .andExpect(jsonPath("$.email", is(TEST_EMAIL)));
@@ -96,14 +98,17 @@ public class SecurityIntegrationTest extends BaseTest {
 
     @Test
     void testAuthenticationWithBasicAuth() throws Exception {
-        // Register a user first
+        // Register a user first and add null check
         User user = userService.registerUser(TEST_USERNAME, TEST_EMAIL, TEST_PASSWORD);
 
-        // Test access with basic auth
-        // Note: We're using the ID as username for Spring Security, as specified in CustomUserDetailsService
-        mockMvc.perform(get("/api/photos")
-                        .header("Authorization", createBasicAuthHeader(user.getId(), TEST_PASSWORD)))
-                .andExpect(status().isOk());
+        if (user != null && user.getId() != null) {
+            // Test access with basic auth
+            mockMvc.perform(get("/api/photos")
+                            .header("Authorization", createBasicAuthHeader(user.getId(), TEST_PASSWORD)))
+                    .andExpect(status().isOk());
+        } else {
+            throw new IllegalStateException("Failed to create test user for authentication test");
+        }
     }
 
     // Helper method to create a basic auth header

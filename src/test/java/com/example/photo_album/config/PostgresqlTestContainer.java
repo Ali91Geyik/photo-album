@@ -9,7 +9,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
 @TestConfiguration(proxyBeanMethods = false)
-@Profile("postgres-test")
+@Profile("postgres-test") // Only active with postgres-test profile
 public class PostgresqlTestContainer {
 
     private static final String POSTGRES_VERSION = "15-alpine";

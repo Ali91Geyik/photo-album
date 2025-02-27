@@ -22,6 +22,7 @@ import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -43,7 +44,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(PhotoController.class)
 @Import({TestConfig.class, SecurityConfig.class, CITestConfig.class})
-@ActiveProfiles({"test", "ci-test"})
+@ActiveProfiles("ci-test")
+@TestPropertySource(properties = {
+        "spring.main.allow-bean-definition-overriding=true"
+})
 class PhotoControllerTest {
 
     @Autowired

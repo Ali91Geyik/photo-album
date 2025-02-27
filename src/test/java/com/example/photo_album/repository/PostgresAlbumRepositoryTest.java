@@ -9,6 +9,8 @@ import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.transaction.TestTransaction;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +24,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Tests features that might behave differently between H2 and PostgreSQL.
  * This class extends AbstractPostgresqlTest which handles all CI-specific configuration.
  */
+@TestPropertySource(properties = {
+        "spring.main.allow-bean-definition-overriding=true"
+})
+@ActiveProfiles("ci-test")
 class PostgresAlbumRepositoryTest extends AbstractPostgresqlTest {
 
     @Autowired

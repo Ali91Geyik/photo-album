@@ -7,10 +7,10 @@ import com.example.photo_album.service.AlbumService;
 import com.example.photo_album.service.PhotoService;
 import com.example.photo_album.service.UserService;
 import org.mockito.Mockito;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.Profile;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
 
@@ -19,12 +19,11 @@ import javax.sql.DataSource;
 /**
  * Test configuration class that provides mock beans for services and dependencies
  * that might not be available in CI environment.
- * 
- * This configuration is activated only when 'test.with.mocks=true', which should be set
- * in CI environment.
+ *
+ * This configuration is activated only when the 'ci-test' profile is active.
  */
 @TestConfiguration
-@ConditionalOnProperty(name = "test.with.mocks", havingValue = "true")
+@Profile("ci-test") // This config is ONLY loaded when ci-test profile is active
 public class CITestConfig {
 
     @Bean

@@ -25,4 +25,4 @@ jobs:
         run: mvn -B package --file pom.xml -DskipTests
 
       - name: Run Tests with CI profile
-        run: mvn test -Dspring.profiles.active=ci-test
+        run: mvn test -Dspring.profiles.active=ci-test -Dspring.main.allow-bean-definition-overriding=true
